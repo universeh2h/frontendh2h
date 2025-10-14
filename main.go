@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -40,29 +39,6 @@ func main() {
 		}
 	}()
 
-	dbPostgres := config.DatabaseConfig{
-		Host:            getEnv("DB_HOST", "ep-frosty-truth-a1doyig5-pooler.ap-southeast-1.aws.neon.tech"),
-		Username:        getEnv("DB_USERNAME", "neondb_owner"),
-		Password:        getEnv("DB_PASSWORD", "npg_MEFai05TZYVG"),
-		DBName:          getEnv("DB_NAME", "report"),
-		Port:            getEnv("DB_PORT", "5432"),
-		SSLMode:         getEnv("DB_SSL_MODE", "require"), // Tambahkan default
-		Timezone:        getEnv("DB_TIMEZONE", "UTC"),     // Tambahkan default
-		MaxIdleConns:    10,                               // Set default values
-		MaxOpenConns:    25,
-		ConnMaxLifetime: time.Hour,
-		ConnMaxIdleTime: time.Minute * 5,
-	}
-	dbConnection, err := config.NewDatabaseConnectionPOstgres(&dbPostgres)
-	if err != nil {
-		log.Logger.Fatal("Failed to connect to database: ", err)
-	}
-
-	defer func() {
-		if err := dbConnection.Close(); err != nil {
-			log.Logger.Error("Failed to close database connection: ", err)
-		}
-	}()
 	log.Logger.Info("Database connected successfully")
 
 	app := fiber.New(fiber.Config{
@@ -89,7 +65,6 @@ func main() {
 
 	// Setup routes
 	routes.SetupRoutes(app, db)
-	routes.SetupAuthRoutes(app, dbConnection.SqlDB)
 
 	// Graceful shutdown
 	go func() {

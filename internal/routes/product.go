@@ -12,10 +12,16 @@ import (
 func SetupRoutes(r *fiber.App, db *sql.DB) {
 	repo := repositories.NewProductRepository(db)
 	service := services.NewProductServices(repo)
-	handler := handler.NewProductHandler(service)
+	handlers := handler.NewProductHandler(service)
+
+	transactionRepo := repositories.NewTransactionRepository(db)
+	transactionServices := services.NewTransactionsService(transactionRepo)
+	transactionHandler := handler.NewTransactionHandler(transactionServices)
 
 	api := r.Group("/api/v1")
-	api.Get("", handler.GetAnalytics)
-	api.Get("/trxtercuan", handler.GetTrxTercuan)
-	api.Get("/trxterbanyak", handler.GetProductTrxTerbanyak)
+	api.Get("", handlers.GetAnalytics)
+	api.Get("/trxtercuan", handlers.GetTrxTercuan)
+	api.Get("/trxterbanyak", handlers.GetProductTrxTerbanyak)
+
+	api.Get("/transactions", transactionHandler.CheckTransactionsRealTime)
 }
