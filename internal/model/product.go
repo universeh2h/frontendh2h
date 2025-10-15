@@ -36,3 +36,10 @@ type TransaksiDetails struct {
 	Harga      float64 `json:"hargaJual"`
 	HargaBeli  float64 `json:"hargaBeli"`
 }
+
+type TopProductsBestSeller struct {
+	TimeRange   string  `json:"time_range"`
+	CountMember int     `json:"count_member"`
+	CountTrx    int64   `json:"count_trx"`
+	TotalProfit float64 `json:"total_profit"`
+}

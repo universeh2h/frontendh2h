@@ -51,6 +51,20 @@ func (h *ProductHandler) GetProductTrxTerbanyak(r *fiber.Ctx) error {
 	return response.SuccessResponse(r, http.StatusOK, "Au Ahh Successfully", data)
 
 }
+func (h *ProductHandler) Report(r *fiber.Ctx) error {
+	startDate := r.Query("startDate")
+	endDate := r.Query("endDate")
+
+	data, err := h.service.GetTotalProfit(r.Context(), startDate, endDate)
+
+	if err != nil {
+		return response.ErrorResponse(r, http.StatusInternalServerError, "Internal Server Error", err.Error())
+
+	}
+
+	return response.SuccessResponse(r, http.StatusOK, "Report Kontol", data)
+
+}
 func (h *ProductHandler) GetTrxTercuan(r *fiber.Ctx) error {
 	startDate := r.Query("startDate")
 	endDate := r.Query("endDate")

@@ -31,3 +31,7 @@ func (s *ProductService) GetTrxTercuan(c context.Context, startDate string, endD
 func (s *ProductService) GetProductTrxTerbanyak(c context.Context, startDate string, endDate string, kodeReseller string) ([]repositories.ProductResponse, error) {
 	return s.repo.GetProductTrxTerbanyak(c, startDate, endDate, kodeReseller)
 }
+
+func (s *ProductService) GetTotalProfit(c context.Context, startDate string, endDate string) ([]model.TopProductsBestSeller, error) {
+	return s.repo.Report(c, startDate, endDate, true)
+}

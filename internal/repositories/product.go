@@ -30,12 +30,12 @@ func (repo *ProductRepository) TotalTransaksi(c context.Context, req model.Pagin
 	}
 
 	if req.StartDate != "" {
-		whereConditions += " AND CAST(tgl_entri AS DATE) >= @startdate"
+		whereConditions += " AND CAST(tgl_status AS DATE) >= @startdate"
 		args = append(args, sql.Named("startdate", req.StartDate))
 	}
 
 	if req.EndDate != "" {
-		whereConditions += " AND CAST(tgl_entri AS DATE) <= @enddate"
+		whereConditions += " AND CAST(tgl_status AS DATE) <= @enddate"
 		args = append(args, sql.Named("enddate", req.EndDate))
 	}
 
@@ -167,12 +167,12 @@ func (repo *ProductRepository) TransaksiReseller(c context.Context, kodeReseller
 	}
 
 	if startDate != "" {
-		whereConditions += " AND CAST(tgl_entri AS DATE) >= @startdate"
+		whereConditions += " AND CAST(tgl_status AS DATE) >= @startdate"
 		args = append(args, sql.Named("startdate", startDate))
 	}
 
 	if startDate != "" {
-		whereConditions += " AND CAST(tgl_entri AS DATE) <= @enddate"
+		whereConditions += " AND CAST(tgl_status AS DATE) <= @enddate"
 		args = append(args, sql.Named("enddate", startDate))
 	}
 	query := `
@@ -217,6 +217,102 @@ func (repo *ProductRepository) TransaksiReseller(c context.Context, kodeReseller
 	}
 
 	// Check untuk error dari rows.Next()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration failed: %w", err)
+	}
+
+	return products, nil
+}
+func (repo *ProductRepository) Report(c context.Context, startDate string, endDate string, groupByTimeRange bool) ([]model.TopProductsBestSeller, error) {
+
+	whereConditions := ""
+	args := []interface{}{}
+
+	if startDate != "" {
+		whereConditions += " AND CAST(tgl_status AS DATE) >= @startdate"
+		args = append(args, sql.Named("startdate", startDate))
+	}
+
+	if endDate != "" { // Fixed: seharusnya endDate bukan startDate
+		whereConditions += " AND CAST(tgl_status AS DATE) <= @enddate"
+		args = append(args, sql.Named("enddate", endDate))
+	}
+	whereConditions += " AND status = 20"
+
+	// Query dengan pengelompokan berdasarkan rentang waktu
+	var query string
+	if groupByTimeRange {
+		query = `
+    SELECT 
+        CASE 
+            WHEN DATEPART(HOUR, tgl_status) = 6 THEN  '06:00 - 07:00'
+            WHEN DATEPART(HOUR, tgl_status) = 7 THEN  '07:00 - 08:00'
+            WHEN DATEPART(HOUR, tgl_status) = 8 THEN  '08:00 - 09:00'
+            WHEN DATEPART(HOUR, tgl_status) = 9 THEN  '09:00 - 10:00'
+            WHEN DATEPART(HOUR, tgl_status) = 10 THEN '10:00 - 11:00'
+            WHEN DATEPART(HOUR, tgl_status) = 11 THEN '11:00 - 12:00'
+            WHEN DATEPART(HOUR, tgl_status) = 12 THEN '12:00 - 13:00'
+            WHEN DATEPART(HOUR, tgl_status) = 13 THEN '13:00 - 14:00'
+            WHEN DATEPART(HOUR, tgl_status) = 14 THEN '14:00 - 15:00'
+            WHEN DATEPART(HOUR, tgl_status) = 15 THEN '15:00 - 16:00'
+            WHEN DATEPART(HOUR, tgl_status) = 16 THEN '16:00 - 17:00'
+            WHEN DATEPART(HOUR, tgl_status) = 17 THEN '17:00 - 18:00'
+            WHEN DATEPART(HOUR, tgl_status) = 18 THEN '18:00 - 19:00'
+            WHEN DATEPART(HOUR, tgl_status) = 19 THEN '19:00 - 20:00'
+            WHEN DATEPART(HOUR, tgl_status) = 20 THEN '20:00 - 21:00'
+            ELSE 'Di luar jam operasional'
+        END as time_range,
+        DATEPART(HOUR, tgl_status) as hour_order,
+        COUNT(*) as jumlah_transaksi,
+        COALESCE(SUM(harga - harga_beli), 0) as total_laba,
+        COUNT(DISTINCT kode_reseller) as count_member
+    FROM transaksi
+    WHERE 1=1` + whereConditions + `
+    GROUP BY DATEPART(HOUR, tgl_status)
+    ORDER BY DATEPART(HOUR, tgl_status)
+    `
+	} else {
+		query = `
+    SELECT 
+        '' as time_range,
+        0 as hour_order,
+        COUNT(*) as jumlah_transaksi,
+        COALESCE(SUM(harga - harga_beli), 0) as total_laba,
+        COUNT(DISTINCT kode_reseller) as count_member
+    FROM transaksi
+    WHERE 1=1` + whereConditions + `
+    `
+	}
+	rows, err := repo.db.QueryContext(c, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []model.TopProductsBestSeller
+	for rows.Next() {
+		select {
+		case <-c.Done():
+			return nil, c.Err()
+		default:
+		}
+
+		var product model.TopProductsBestSeller
+		var hourOrder int // Tambahkan variable ini untuk scan hour_order
+
+		err := rows.Scan(
+			&product.TimeRange,
+			&hourOrder, // Scan hour_order tapi tidak disimpan ke struct
+			&product.CountTrx,
+			&product.TotalProfit,
+			&product.CountMember,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		products = append(products, product)
+	}
+
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows iteration failed: %w", err)
 	}

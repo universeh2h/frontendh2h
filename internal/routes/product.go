@@ -24,4 +24,5 @@ func SetupRoutes(r *fiber.App, db *sql.DB) {
 	api.Get("/trxterbanyak", handlers.GetProductTrxTerbanyak)
 
 	api.Get("/transactions", transactionHandler.CheckTransactionsRealTime)
+	api.Get("/report-kontol", handlers.Report)
 }
