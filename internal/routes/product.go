@@ -18,11 +18,16 @@ func SetupRoutes(r *fiber.App, db *sql.DB) {
 	transactionServices := services.NewTransactionsService(transactionRepo)
 	transactionHandler := handler.NewTransactionHandler(transactionServices)
 
+	moduleRepo := repositories.NewModulOtomax(db)
+	moduleService := services.NewModulService(moduleRepo)
+	moduleHandler := handler.NewModulHandler(moduleService)
+
 	api := r.Group("/api/v1")
 	api.Get("", handlers.GetAnalytics)
 	api.Get("/trxtercuan", handlers.GetTrxTercuan)
 	api.Get("/trxterbanyak", handlers.GetProductTrxTerbanyak)
 
 	api.Get("/transactions", transactionHandler.CheckTransactionsRealTime)
-	api.Get("/report-kontol", handlers.Report)
+	api.Get("/report", handlers.Report)
+	api.Get("/modul-otomax", moduleHandler.GetAllModulOtomax)
 }
