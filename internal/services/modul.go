@@ -15,8 +15,8 @@ func NewModulService(repo *repositories.ModulOtomax) *ModulService {
 		repo: repo,
 	}
 }
-func (s *ModulService) GetAllModulOtomax(c context.Context) ([]repositories.ModulType, error) {
-	data, err := s.repo.GetAllModulOtomax(c)
+func (s *ModulService) GetAllModulOtomax(c context.Context, date string) ([]repositories.ModulType, error) {
+	data, err := s.repo.GetAllModulOtomax(c, date)
 	if err != nil {
 		return nil, err
 	}

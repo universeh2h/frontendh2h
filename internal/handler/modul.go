@@ -18,9 +18,9 @@ func NewModulHandler(service *services.ModulService) *ModulHandler {
 	}
 }
 
-// GetAllModulOtomax handles the request to get all Modul Otomax
 func (h *ModulHandler) GetAllModulOtomax(r *fiber.Ctx) error {
-	data, err := h.service.GetAllModulOtomax(r.Context())
+	date := r.Query("date")
+	data, err := h.service.GetAllModulOtomax(r.Context(), date)
 
 	if err != nil {
 		return response.ErrorResponse(r, http.StatusInternalServerError, "Internal Server Error", err.Error())
