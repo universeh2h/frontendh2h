@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/universeh2h/report/internal/model"
 )
@@ -225,72 +226,107 @@ func (repo *ProductRepository) TransaksiReseller(c context.Context, kodeReseller
 }
 func (repo *ProductRepository) Report(c context.Context, startDate string, endDate string, groupByTimeRange bool) ([]model.TopProductsBestSeller, error) {
 
-	whereConditions := ""
-	args := []interface{}{}
-
 	if startDate != "" {
-		whereConditions += " AND CAST(tgl_status AS DATE) >= @startdate"
-		args = append(args, sql.Named("startdate", startDate))
+		if _, err := time.Parse("2006-01-02", startDate); err != nil {
+			return nil, fmt.Errorf("invalid startDate format: %w", err)
+		}
+	}
+	if endDate != "" {
+		if _, err := time.Parse("2006-01-02", endDate); err != nil {
+			return nil, fmt.Errorf("invalid endDate format: %w", err)
+		}
 	}
 
-	if endDate != "" { // Fixed: seharusnya endDate bukan startDate
-		whereConditions += " AND CAST(tgl_status AS DATE) <= @enddate"
-		args = append(args, sql.Named("enddate", endDate))
-	}
-	whereConditions += " AND status = 20"
-
-	// Query dengan pengelompokan berdasarkan rentang waktu
 	var query string
+	var args []interface{}
+
 	if groupByTimeRange {
+		// Query dengan grouping berdasarkan jam
 		query = `
-    SELECT 
-        CASE 
-            WHEN DATEPART(HOUR, tgl_status) = 6 THEN  '06:00 - 07:00'
-            WHEN DATEPART(HOUR, tgl_status) = 7 THEN  '07:00 - 08:00'
-            WHEN DATEPART(HOUR, tgl_status) = 8 THEN  '08:00 - 09:00'
-            WHEN DATEPART(HOUR, tgl_status) = 9 THEN  '09:00 - 10:00'
-            WHEN DATEPART(HOUR, tgl_status) = 10 THEN '10:00 - 11:00'
-            WHEN DATEPART(HOUR, tgl_status) = 11 THEN '11:00 - 12:00'
-            WHEN DATEPART(HOUR, tgl_status) = 12 THEN '12:00 - 13:00'
-            WHEN DATEPART(HOUR, tgl_status) = 13 THEN '13:00 - 14:00'
-            WHEN DATEPART(HOUR, tgl_status) = 14 THEN '14:00 - 15:00'
-            WHEN DATEPART(HOUR, tgl_status) = 15 THEN '15:00 - 16:00'
-            WHEN DATEPART(HOUR, tgl_status) = 16 THEN '16:00 - 17:00'
-            WHEN DATEPART(HOUR, tgl_status) = 17 THEN '17:00 - 18:00'
-            WHEN DATEPART(HOUR, tgl_status) = 18 THEN '18:00 - 19:00'
-            WHEN DATEPART(HOUR, tgl_status) = 19 THEN '19:00 - 20:00'
-            WHEN DATEPART(HOUR, tgl_status) = 20 THEN '20:00 - 21:00'
-            ELSE 'Di luar jam operasional'
-        END as time_range,
-        DATEPART(HOUR, tgl_status) as hour_order,
-        COUNT(*) as jumlah_transaksi,
-        COALESCE(SUM(harga - harga_beli), 0) as total_laba,
-        COUNT(DISTINCT kode_reseller) as count_member
-    FROM transaksi
-    WHERE 1=1` + whereConditions + `
-    GROUP BY DATEPART(HOUR, tgl_status)
-    ORDER BY DATEPART(HOUR, tgl_status)
-    `
+		SELECT 
+			CASE 
+				WHEN DATEPART(HOUR, tgl_status) = 0 THEN '00:00 - 01:00'
+				WHEN DATEPART(HOUR, tgl_status) = 1 THEN '01:00 - 02:00'
+				WHEN DATEPART(HOUR, tgl_status) = 2 THEN '02:00 - 03:00'
+				WHEN DATEPART(HOUR, tgl_status) = 3 THEN '03:00 - 04:00'
+				WHEN DATEPART(HOUR, tgl_status) = 4 THEN '04:00 - 05:00'
+				WHEN DATEPART(HOUR, tgl_status) = 5 THEN '05:00 - 06:00'
+				WHEN DATEPART(HOUR, tgl_status) = 6 THEN '06:00 - 07:00'
+				WHEN DATEPART(HOUR, tgl_status) = 7 THEN '07:00 - 08:00'
+				WHEN DATEPART(HOUR, tgl_status) = 8 THEN '08:00 - 09:00'
+				WHEN DATEPART(HOUR, tgl_status) = 9 THEN '09:00 - 10:00'
+				WHEN DATEPART(HOUR, tgl_status) = 10 THEN '10:00 - 11:00'
+				WHEN DATEPART(HOUR, tgl_status) = 11 THEN '11:00 - 12:00'
+				WHEN DATEPART(HOUR, tgl_status) = 12 THEN '12:00 - 13:00'
+				WHEN DATEPART(HOUR, tgl_status) = 13 THEN '13:00 - 14:00'
+				WHEN DATEPART(HOUR, tgl_status) = 14 THEN '14:00 - 15:00'
+				WHEN DATEPART(HOUR, tgl_status) = 15 THEN '15:00 - 16:00'
+				WHEN DATEPART(HOUR, tgl_status) = 16 THEN '16:00 - 17:00'
+				WHEN DATEPART(HOUR, tgl_status) = 17 THEN '17:00 - 18:00'
+				WHEN DATEPART(HOUR, tgl_status) = 18 THEN '18:00 - 19:00'
+				WHEN DATEPART(HOUR, tgl_status) = 19 THEN '19:00 - 20:00'
+				WHEN DATEPART(HOUR, tgl_status) = 20 THEN '20:00 - 21:00'
+				WHEN DATEPART(HOUR, tgl_status) = 21 THEN '21:00 - 22:00'
+				WHEN DATEPART(HOUR, tgl_status) = 22 THEN '22:00 - 23:00'
+				WHEN DATEPART(HOUR, tgl_status) = 23 THEN '23:00 - 00:00'
+			END as time_range,
+			DATEPART(HOUR, tgl_status) as hour_order,
+			COUNT(*) as jumlah_transaksi,
+			COALESCE(SUM(harga - harga_beli), 0) as total_laba,
+			COUNT(DISTINCT kode_reseller) as count_member
+		FROM transaksi
+		WHERE status = 20
+		`
+
+		if startDate != "" {
+			query += " AND CAST(tgl_status AS DATE) >= @startdate"
+			args = append(args, sql.Named("startdate", startDate))
+		}
+
+		if endDate != "" {
+			query += " AND CAST(tgl_status AS DATE) <= @enddate"
+			args = append(args, sql.Named("enddate", endDate))
+		}
+
+		query += `
+		GROUP BY DATEPART(HOUR, tgl_status)
+		ORDER BY DATEPART(HOUR, tgl_status)
+		`
+
 	} else {
 		query = `
-    SELECT 
-        '' as time_range,
-        0 as hour_order,
-        COUNT(*) as jumlah_transaksi,
-        COALESCE(SUM(harga - harga_beli), 0) as total_laba,
-        COUNT(DISTINCT kode_reseller) as count_member
-    FROM transaksi
-    WHERE 1=1` + whereConditions + `
-    `
+		SELECT 
+			'Total' as time_range,
+			0 as hour_order,
+			COUNT(*) as jumlah_transaksi,
+			COALESCE(SUM(harga - harga_beli), 0) as total_laba,
+			COUNT(DISTINCT kode_reseller) as count_member
+		FROM transaksi
+		WHERE status = 20
+		`
+
+		if startDate != "" {
+			query += " AND CAST(tgl_status AS DATE) >= @startdate"
+			args = append(args, sql.Named("startdate", startDate))
+		}
+
+		if endDate != "" {
+			query += " AND CAST(tgl_status AS DATE) <= @enddate"
+			args = append(args, sql.Named("enddate", endDate))
+		}
 	}
+
+	// Execute query
 	rows, err := repo.db.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query execution failed: %w", err)
 	}
 	defer rows.Close()
 
+	// Scan results
 	var products []model.TopProductsBestSeller
 	for rows.Next() {
+		// Check context cancellation
 		select {
 		case <-c.Done():
 			return nil, c.Err()
@@ -298,11 +334,11 @@ func (repo *ProductRepository) Report(c context.Context, startDate string, endDa
 		}
 
 		var product model.TopProductsBestSeller
-		var hourOrder int // Tambahkan variable ini untuk scan hour_order
+		var hourOrder int
 
 		err := rows.Scan(
 			&product.TimeRange,
-			&hourOrder, // Scan hour_order tapi tidak disimpan ke struct
+			&hourOrder,
 			&product.CountTrx,
 			&product.TotalProfit,
 			&product.CountMember,
@@ -310,6 +346,7 @@ func (repo *ProductRepository) Report(c context.Context, startDate string, endDa
 		if err != nil {
 			return nil, fmt.Errorf("scan failed: %w", err)
 		}
+
 		products = append(products, product)
 	}
 

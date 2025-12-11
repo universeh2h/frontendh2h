@@ -68,7 +68,7 @@ func main() {
 
 	// Graceful shutdown
 	go func() {
-		port := getEnv("PORT", "5000")
+		port := getEnv("PORT", "4000")
 		log.Logger.Info(fmt.Sprintf("Server starting on port %s", port))
 
 		if err := app.Listen(":" + port); err != nil {
@@ -123,7 +123,7 @@ func setupCORS() cors.Config {
 			// Use environment variable if set
 			config.AllowOrigins = allowedOrigins
 		} else {
-			config.AllowOrigins = "http://localhost:5173,http://localhost:3000,https://pf69lscd-5173.asse.devtunnels.ms,https://mvbdbbk3-5173.asse.devtunnels.ms"
+			config.AllowOrigins = "http://localhost:5173,http://localhost:3000,https://pf69lscd-5173.asse.devtunnels.ms,https://mvbdbbk3-5173.asse.devtunnels.ms,http://103.184.122.173:5173"
 		}
 	}
 

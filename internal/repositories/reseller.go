@@ -38,14 +38,17 @@ func (repo *ProductRepository) GetProductTrxTerbanyak(c context.Context, startDa
 		args = append(args, sql.Named("enddate", endDate))
 	}
 
+	
+
 	query := `
 		SELECT TOP 10
-			kode_produk,
+			SUBSTRING(kode_produk, 1, PATINDEX('%[0-9]%', kode_produk) - 1) as prefix_produk,
 			COUNT(*) as jumlah_transaksi,
 			SUM(harga - harga_beli) as total_laba
 		FROM transaksi
-		WHERE  status = 20` + whereConditions + `
-		GROUP BY kode_produk
+		WHERE status = 20`  + whereConditions + `
+		AND PATINDEX('%[0-9]%', kode_produk) > 0
+		GROUP BY SUBSTRING(kode_produk, 1, PATINDEX('%[0-9]%', kode_produk) - 1)
 		ORDER BY jumlah_transaksi DESC;
 	`
 	rows, err := repo.db.QueryContext(c, query, args...)
@@ -96,16 +99,26 @@ func (repo *ProductRepository) GetTrxTercuan(c context.Context, startDate string
 		whereConditions += " AND CAST(tgl_status AS DATE) <= @enddate"
 		args = append(args, sql.Named("enddate", endDate))
 	}
+	// SELECT TOP 10
+	// 		SUBSTRING(kode_produk, 1, PATINDEX('%[0-9]%', kode_produk) - 1) as prefix_produk,
+	// 		COUNT(*) as jumlah_transaksi,
+	// 		SUM(harga - harga_beli) as total_laba
+	// 	FROM transaksi
+	// 	WHERE status = 20`  + whereConditions + `
+	// 	AND PATINDEX('%[0-9]%', kode_produk) > 0
+	// 	GROUP BY SUBSTRING(kode_produk, 1, PATINDEX('%[0-9]%', kode_produk) - 1)
+	// 	ORDER BY jumlah_transaksi DESC;
 
 	query := `
 	SELECT TOP 10
-		kode_produk,
+		SUBSTRING(kode_produk, 1, PATINDEX('%[0-9]%', kode_produk) - 1) as prefix_produk,
 		COUNT(*) as jumlah_transaksi,
 		SUM(harga - harga_beli) as total_laba,
 		AVG(harga - harga_beli) as rata_rata_laba
 	FROM transaksi
 	WHERE  status = 20` + whereConditions + `
-	GROUP BY kode_produk
+	AND PATINDEX('%[0-9]%', kode_produk) > 0
+	GROUP BY SUBSTRING(kode_produk, 1, PATINDEX('%[0-9]%', kode_produk) - 1)
 	ORDER BY total_laba DESC;
 	`
 	rows, err := repo.db.QueryContext(c, query, args...)
