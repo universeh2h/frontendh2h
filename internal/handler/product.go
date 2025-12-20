@@ -80,3 +80,13 @@ func (h *ProductHandler) GetTrxTercuan(r *fiber.Ctx) error {
 	return response.SuccessResponse(r, http.StatusOK, "Create Category Successfully", data)
 
 }
+
+func (h *ProductHandler) GetBalanceSupplier(r *fiber.Ctx) error {
+	kode := r.QueryInt("kode")
+
+	data, err := h.service.GetBalanceSupplier(r.Context(), kode)
+	if err != nil {
+		return response.ErrorResponse(r, http.StatusInternalServerError, "Internal Server Error", err.Error())
+	}
+	return response.SuccessResponse(r, http.StatusOK, "Get Balance Supplier Successfully", data)
+}

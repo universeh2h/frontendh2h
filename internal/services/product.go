@@ -35,3 +35,7 @@ func (s *ProductService) GetProductTrxTerbanyak(c context.Context, startDate str
 func (s *ProductService) GetTotalProfit(c context.Context, startDate string, endDate string) ([]model.TopProductsBestSeller, error) {
 	return s.repo.Report(c, startDate, endDate, true)
 }
+
+func (s *ProductService) GetBalanceSupplier(c context.Context, kode int) (string, error) {
+	return s.repo.GetBalanceSupplier(c, kode)
+}

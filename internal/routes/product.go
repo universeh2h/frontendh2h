@@ -27,6 +27,8 @@ func SetupRoutes(r *fiber.App, db *sql.DB) {
 	api.Get("/trxtercuan", handlers.GetTrxTercuan)
 	api.Get("/trxterbanyak", handlers.GetProductTrxTerbanyak)
 
+	api.Get("/saldo-supplier", handlers.GetBalanceSupplier)
+
 	api.Get("/transactions", transactionHandler.CheckTransactionsRealTime)
 	api.Get("/report", handlers.Report)
 	api.Get("/modul-otomax", moduleHandler.GetAllModulOtomax)
