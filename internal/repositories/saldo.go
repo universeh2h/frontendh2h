@@ -85,6 +85,10 @@ func RegexParsingSupplierBalance(parsing string) ParsingSupplierBalance {
 			switch key {
 			case "memberId":
 				result.MemberId = value
+			case "memberid":
+				result.MemberId = value
+			case "memberID":
+				result.MemberId = value
 			case "pin":
 				result.Pin = value
 			case "password":
